@@ -318,7 +318,7 @@ public class board : MonoBehaviour
             }
         }
         yield return new WaitUntil(() => (num_of_hex() >= boardHeight*boardWidth));
-        for (int i = 0;i<=9999-difficulty;i++){
+        for (int i = 0;i<=100-difficulty;i++){
             if (get_hint()){
                 break;
             }
