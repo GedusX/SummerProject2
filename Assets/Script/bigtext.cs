@@ -14,17 +14,24 @@ public class bigtext : MonoBehaviour
         
     }
     IEnumerator texting(string message = ""){
-        transform.Find("text").gameObject.GetComponent<TextMeshPro>().color *= new Color(1,1,1,0);
-        transform.Find("text").gameObject.GetComponent<TextMeshPro>().DOFade(0,0f);
-        
+        transform.Find("text").gameObject.GetComponent<TextMeshProUGUI>().color *= new Color(1,1,1,0);
         transform.Find("text").gameObject.GetComponent<RectTransform>().localScale = new Vector3(0,0,0);
-        
+        transform.Find("border").gameObject.GetComponent<TextMeshProUGUI>().color *= new Color(1,1,1,0);
+        transform.Find("border").gameObject.GetComponent<RectTransform>().localScale = new Vector3(0,0,0);
+
         //transform.Find("text").gameObject.GetComponent<TextMeshPro>()
-        transform.Find("text").DOScale(new Vector3(1,1,1),1f);
-        transform.Find("text").gameObject.GetComponent<TextMeshPro>().DOFade(1,1f);
-        
-        yield return new WaitForSeconds(1f);
-        transform.Find("text").gameObject.GetComponent<TextMeshPro>().DOFade(0,1f);
+        seq.Insert(0.0f,transform.Find("text").DOScale(new Vector3(1,1,1),1f));
+        seq.Insert(0.0f,transform.Find("text").gameObject.GetComponent<TextMeshProUGUI>().DOFade(1,1f));
+        seq.Insert(0.0f,transform.Find("border").DOScale(new Vector3(1,1,1),1f));
+        seq.Insert(0.0f,transform.Find("border").gameObject.GetComponent<TextMeshProUGUI>().DOFade(1,1f));
+        seq.Play();
+        yield return new WaitForSeconds(1.1f);
+        seq.Insert(0.0f,transform.Find("border").DOScale(new Vector3(10,10,1),1f));
+        seq.Insert(0.0f,transform.Find("border").gameObject.GetComponent<TextMeshProUGUI>().DOFade(0,1f));
+        seq.Insert(0.0f,transform.Find("text").gameObject.GetComponent<TextMeshProUGUI>().DOFade(0,1f));
+        seq.Insert(0.0f,transform.Find("text").DOScale(new Vector3(3,3,1),0.5f));
+        seq.Play();
+        //transform.Find("text").gameObject.GetComponent<TextMeshPro>().DOFade(0,1f);
         
     }
     // Update is called once per frame

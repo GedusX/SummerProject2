@@ -500,9 +500,10 @@ public class board : MonoBehaviour
                     detonate(hexagons[i,j]);
                 }
                 else if (hexagons[i,j].GetComponent<Hexa>().type == Hexa_Type.LINE){
-                    lasering(hexagons[i,j]);
+                    StartCoroutine(lasering(hexagons[i,j]));
                 }
                 else{
+                    exploded.Add(hexagons[i,j]);
                     hexagons[i,j].GetComponent<Hexa>().explode();
                    // GameObject t = Instantiate(effects[1],hexagons[i,j].transform.position,Quaternion.identity);
                 }
@@ -512,7 +513,7 @@ public class board : MonoBehaviour
             }
         }
         dim_timer+=0.5f;
-        yield return new WaitForSeconds(3.0f);
+        //yield return new WaitForSeconds(3.0f);
     }
     public GameObject get_hint(){
         int[,] temp = new int[boardWidth, boardHeight];
@@ -595,11 +596,12 @@ public class board : MonoBehaviour
                     detonate(hexagons[i,j]);
                 }
                 else if (hexagons[i,j].GetComponent<Hexa>().type == Hexa_Type.LINE){
-                    lasering(hexagons[i,j]);
+                    StartCoroutine(lasering(hexagons[i,j]));
                 }
                 else{
+                    exploded.Add(hexagons[i,j]);
                     hexagons[i,j].GetComponent<Hexa>().explode();
-                    GameObject t = Instantiate(effects[1],hexagons[i,j].transform.position,Quaternion.identity);
+                    //GameObject t = Instantiate(effects[1],hexagons[i,j].transform.position,Quaternion.identity);
                 }
                 //score_text.GetComponent<Score_text>().update_points(50);
                 GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(50);
