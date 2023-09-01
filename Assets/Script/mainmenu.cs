@@ -7,8 +7,9 @@ public class mainmenu : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        MusicManager.instance.StopAll();
     }
+
     public void playgame(){
         ClassicHandler.score = 0;
         ClassicHandler.level = 1;

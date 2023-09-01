@@ -9,7 +9,8 @@ public class GameoverScreen : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        GameObject.Find("finalscore").GetComponent<TextMeshProUGUI>().text = "your final score: " + ClassicHandler.score.ToString();
+        //MusicManager.instance.Play("gameover");
+        GameObject.Find("finalscore").GetComponent<TextMeshProUGUI>().text = "your final score:\n" + ClassicHandler.score.ToString();
     }
     public void mainmenu(){
         SceneManager.LoadScene("Scenes/Menu",LoadSceneMode.Single);

@@ -7,13 +7,21 @@ public class bigtext : MonoBehaviour
 {
     // Start is called before the first frame update
     Sequence seq;
+    private void Awake() {
+        seq = DOTween.Sequence();
+    }
     void Start()
     {
-        seq = DOTween.Sequence();
-        StartCoroutine(texting());
+        
+        
         
     }
-    IEnumerator texting(string message = ""){
+    public IEnumerator texting(string message = ""){
+
+        transform.Find("text").gameObject.GetComponent<TextMeshProUGUI>().text = message;
+        
+        transform.Find("border").gameObject.GetComponent<TextMeshProUGUI>().text = message;
+
         transform.Find("text").gameObject.GetComponent<TextMeshProUGUI>().color *= new Color(1,1,1,0);
         transform.Find("text").gameObject.GetComponent<RectTransform>().localScale = new Vector3(0,0,0);
         transform.Find("border").gameObject.GetComponent<TextMeshProUGUI>().color *= new Color(1,1,1,0);
@@ -31,6 +39,8 @@ public class bigtext : MonoBehaviour
         seq.Insert(0.0f,transform.Find("text").gameObject.GetComponent<TextMeshProUGUI>().DOFade(0,1f));
         seq.Insert(0.0f,transform.Find("text").DOScale(new Vector3(3,3,1),0.5f));
         seq.Play();
+        yield return new WaitForSeconds(2f);
+        Destroy(gameObject);
         //transform.Find("text").gameObject.GetComponent<TextMeshPro>().DOFade(0,1f);
         
     }

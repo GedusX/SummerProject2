@@ -2,32 +2,32 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
-
+using TMPro;
 public class board : MonoBehaviour
 {
     
     // The width of the board in cells
-    public int boardWidth = 8;
+    [SerializeField] int boardWidth;
     // The height of the board in cells
-    public int boardHeight = 8;
+    [SerializeField] int boardHeight;
     // The prefab of an object
-    public GameObject hexagon;
+    [SerializeField] GameObject hexagon;
 
-    public GameObject hexagon_unit;
+    [SerializeField] GameObject hexagon_unit;
 
     public bool idle;
 
-    public float dim_timer;
+    float dim_timer;
 
     // The 2D array to store the objects, while i represents for col (x), and j represents for row (y);
-    private GameObject[,] hexagon_slots;
+    [SerializeField] private GameObject[,] hexagon_slots;
     
 
-    public GameObject[,] hexagons;
+    [SerializeField] public GameObject[,] hexagons;
 
     public GameObject pointstext;
 
-    public int difficulty;
+    //public int difficulty;
 
     // The width of an object
     public float hexWidth = 1.5f;
@@ -35,24 +35,48 @@ public class board : MonoBehaviour
     public float hexHeight = 1.5f;
 
     public List<GameObject> invicible;
+
+    
+
+    
     
     public List<GameObject> exploded;
+
+    public List<GameObject> dimmed;
+    private void Awake() {
+        invicible = new List<GameObject>();
+        exploded = new List<GameObject>();
+        dimmed = new List<GameObject>();
+    }
     // Start is called before the first frame update
     void Start()
     {
         // Create the board
         CreateBoard();
-        invicible = new List<GameObject>();
-        exploded = new List<GameObject>();
+        
+        
+        //Time.timeScale = 0;
     }
 
     // Update is called once per frame
     public bool legal_move = false;
+
+    
     void Update()
     {
+        //Debug.Log(Random.Range(0,-5));
         dim_timer-=Time.deltaTime;
         if (dim_timer<0)
             dim_timer = 0;
+        
+        if (Input.GetMouseButton(0)){
+            Debug.Log(pix_to_grid(Camera.main.ScreenToWorldPoint(Input.mousePosition)));
+            Vector2Int grid = pix_to_grid(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            if (is_legit(grid)){
+                hexagons[grid.x,grid.y].GetComponent<Hexa>().ClickOn();
+            }
+        }
+        
         //Debug.Log(get_hint());
         for (int i = 0;i<boardWidth;i++){
             for (int j = 0; j<boardHeight;j++){
@@ -60,13 +84,17 @@ public class board : MonoBehaviour
                     hexagons[i,j].GetComponent<Hexa>().pos = new Vector2Int(i,j);
             }
         }
-        legal_move = (drag_list.Count>=3||(drag_list.Count==2&&drag_list[0].GetComponent<Hexa>().type == Hexa_Type.WILD));
-        if (Input.GetMouseButtonUp(0) && drag_list.Count>0 ){
+        //legal_move = (drag_list.Count>=3||(drag_list.Count==2&&drag_list[0].GetComponent<Hexa>().type == Hexa_Type.WILD));
+        if (Input.GetMouseButtonUp(0) && drag_list.Count>0 && idle){
             invicible.Clear();
             exploded.Clear();
+            idle = false;
+            
             if (drag_list.Count==2 && drag_list[0].GetComponent<Hexa>().type==Hexa_Type.WILD){
+                update_lock();
+                lock_create();
                 if (drag_list[1].GetComponent<Hexa>().type==Hexa_Type.WILD){
-                    clear_all(drag_list[0]);
+                    clear_all(drag_list[0],drag_list[1]);
                 }
                 else{
                     //Debug.Log("hehe");
@@ -77,6 +105,8 @@ public class board : MonoBehaviour
             }
             else if (drag_list.Count>=3){
                 idle = false;
+                update_lock();
+                lock_create();
                 //Debug.Log(drag_list.Count);
                 Hexa_Type got = Hexa_Type.NORMAL;
                 if (drag_list.Count>=7){
@@ -84,25 +114,25 @@ public class board : MonoBehaviour
                     AudioManager.instance.Play("voidhex");
                     //GameObject score_text = Instantiate(pointstext,drag_list[0].transform.position,Quaternion.identity);
                     //score_text.GetComponent<Score_text>().update_points(500);
-                    GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(500);
+                    GameObject.Find("Level_handler").GetComponent<Handler>().update_score(500);
                 }
                 else if (drag_list.Count>=6){
                     got = Hexa_Type.LINE;
                     AudioManager.instance.Play("starhex");
                     //GameObject score_text = Instantiate(pointstext,drag_list[0].transform.position,Quaternion.identity);
                    // score_text.GetComponent<Score_text>().update_points(200);
-                    GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(200);
+                    GameObject.Find("Level_handler").GetComponent<Handler>().update_score(200);
                 }
                 else if (drag_list.Count>=5){
                     got = Hexa_Type.BOMB;
                     AudioManager.instance.Play("powerhex");
                     //GameObject score_text = Instantiate(pointstext,drag_list[0].transform.position,Quaternion.identity);
                     //score_text.GetComponent<Score_text>().update_points(150);
-                    GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(150);
+                    GameObject.Find("Level_handler").GetComponent<Handler>().update_score(150);
                 }
                 if (got!=Hexa_Type.NORMAL){
                     invicible.Add(drag_list[0]);
-                    for (int k = drag_list.Count-1;k>0;k--){
+                    for (int k = drag_list.Count-1;k>=0;k--){
                         if (drag_list[k].GetComponent<Hexa>().type == Hexa_Type.BOMB){
                             detonate(drag_list[k]);
                         }
@@ -113,7 +143,8 @@ public class board : MonoBehaviour
                             detonate(drag_list[k]);
                         }
                         else{
-                            drag_list[k].GetComponent<Hexa>().combining();
+                            if (k>0)
+                                drag_list[k].GetComponent<Hexa>().combining();
                         }
 
                         
@@ -123,7 +154,7 @@ public class board : MonoBehaviour
                 else{
                     //GameObject score_text = Instantiate(pointstext,drag_list[0].transform.position,Quaternion.identity);
                     //score_text.GetComponent<Score_text>().update_points(50+50*(drag_list.Count-3));
-                    GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(50+50*(drag_list.Count-3));
+                    GameObject.Find("Level_handler").GetComponent<Handler>().update_score(50+50*(drag_list.Count-3));
                     AudioManager.instance.Play("gotcha");
                     foreach (GameObject i in drag_list){
                         if (i.GetComponent<Hexa>().type == Hexa_Type.BOMB){
@@ -133,15 +164,20 @@ public class board : MonoBehaviour
                             StartCoroutine(lasering(i));
                         }
                         else{
-                            i.GetComponent<Hexa>().dimming();
+                            //dimmed.Add(i);
+                            if (!exploded.Contains(i))
+                                i.GetComponent<Hexa>().dimming();
                         }
                     }
+
                 }
-                dim_timer+=0.3f;
+                
+                dim_timer+=0.4f;
                 StartCoroutine(hex_falling());
             }
             else{
                 AudioManager.instance.Play("badmove");
+                idle = true;
                 drag_list.Clear();
             }
         }
@@ -150,12 +186,21 @@ public class board : MonoBehaviour
     
     // Create the board with objects
 
-    Vector3 grid_to_pix(int i, int j){
-        float xOffset = hexWidth * 0.85f;
-        float yOffset = hexHeight * 0.45f;
+    public Vector2 grid_to_pix(int i, int j){
+        float xOffset = 0.8743f;
+        float yOffset = 0.4722f;
         float x = i * xOffset;
-        float y = j * hexHeight + (i % 2) * yOffset;
-        return transform.position + new Vector3(x,y,0);
+        float y = j * 0.9425f + (i % 2) * yOffset;
+        return transform.position + new Vector3(x,y);
+    }
+    public Vector2Int pix_to_grid(Vector3 pos){
+        float xOffset = 0.8743f;
+        float yOffset = 0.4722f;
+        
+        Vector2 inner_pos = pos-transform.position;
+        int i = Mathf.RoundToInt(inner_pos.x/xOffset);
+        int j = Mathf.RoundToInt((inner_pos.y-(i % 2)*yOffset)/0.9425f);
+        return new Vector2Int(i,j);
     }
     void CreateBoard()
     {
@@ -178,7 +223,14 @@ public class board : MonoBehaviour
 
                 // Set the parent of the object to be this board object
                 newHexagon.transform.parent = this.transform;
-
+                
+                newHexagon.transform.Find("board_border").Find("board_border_1").gameObject.SetActive(j == boardHeight-1);
+                newHexagon.transform.Find("board_border").Find("board_border_2").gameObject.SetActive((j == boardHeight-1 && i%2!=0)||(i == boardWidth));
+                newHexagon.transform.Find("board_border").Find("board_border_3").gameObject.SetActive((j == 0 && i%2==0)||(i == boardWidth-1));
+                newHexagon.transform.Find("board_border").Find("board_border_4").gameObject.SetActive(j == 0);
+                newHexagon.transform.Find("board_border").Find("board_border_5").gameObject.SetActive((j == 0 && i%2==0)||(i == 0));
+                newHexagon.transform.Find("board_border").Find("board_border_6").gameObject.SetActive((j == boardHeight-1 && i%2!=0)||(i==0));
+                
                 // Store the object in the array
                 hexagon_slots[i, j] = newHexagon;
                 hexagons[i,j] = null;
@@ -222,8 +274,10 @@ public class board : MonoBehaviour
     //drag and drop system
 
     public bool is_next_to(GameObject obj1, GameObject obj2){
-        
-        return ((Mathf.Round((obj2.transform.position-obj1.transform.position).magnitude))<=hexHeight);
+        Vector2Int pos1 = obj1.GetComponent<Hexa>().pos;
+        Vector2Int pos2 = obj2.GetComponent<Hexa>().pos;
+        //Debug.Log((grid_to_pix(pos2.x, pos2.y)-grid_to_pix(pos1.x,pos1.y)).magnitude);
+        return (((grid_to_pix(pos2.x, pos2.y)-grid_to_pix(pos1.x,pos1.y)).magnitude)<=hexWidth*1.1f);
 
     }
 
@@ -241,6 +295,7 @@ public class board : MonoBehaviour
             else{
                 if (drag_list[0].GetComponent<Hexa>().type==Hexa_Type.WILD){
                     if (drag_list.Count>=2){
+                        legal_move = (drag_list.Count>=3||(drag_list.Count==2&&drag_list[0].GetComponent<Hexa>().type == Hexa_Type.WILD));
                         return;
                     }
                     drag_list.Add(hex);
@@ -262,12 +317,16 @@ public class board : MonoBehaviour
             }
             
         }
+        legal_move = (drag_list.Count>=3||(drag_list.Count==2&&drag_list[0].GetComponent<Hexa>().type == Hexa_Type.WILD));
+
     }
     //falling
     
     IEnumerator hex_falling(){
         
         yield return new WaitUntil(() => (dim_timer<=0));
+        check_lock();
+        float max_fall_duration = 0;
         drag_list.Clear();
         for (int i =0;i<boardWidth;i++){
             for (int j = 0; j<boardHeight;j++){
@@ -286,12 +345,14 @@ public class board : MonoBehaviour
                         //Debug.Log("jello");
                         hexagons[target_pos.x,target_pos.y] = hexagons[i,j];
                         hexagons[i,j] = null;
-                        hexagons[target_pos.x,target_pos.y].transform.DOMove(grid_to_pix(target_pos.x,target_pos.y),0.2f);
+                        max_fall_duration = Mathf.Max(max_fall_duration,(grid_to_pix(target_pos.x,target_pos.y)-grid_to_pix(i,j)).magnitude/8);
+                        hexagons[target_pos.x,target_pos.y].transform.DOMove(grid_to_pix(target_pos.x,target_pos.y),(grid_to_pix(target_pos.x,target_pos.y)-grid_to_pix(i,j)).magnitude/8).SetEase(Ease.InOutSine);
+                    
                     }
                 }
             }
         }
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(max_fall_duration);
         StartCoroutine(filling());
     }
     int num_of_hex(){
@@ -318,16 +379,27 @@ public class board : MonoBehaviour
             }
         }
         yield return new WaitUntil(() => (num_of_hex() >= boardHeight*boardWidth));
-        for (int i = 0;i<=100-difficulty;i++){
+        if (GameObject.Find("Level_handler").GetComponent<Handler>().no_move){
             if (get_hint()){
-                break;
+
             }
-            else{
+            else {
+            for (int i = 0;i<=100-GameObject.Find("Level_handler").GetComponent<Handler>().difficulty;i++){
+                foreach (GameObject k in slot_avail){
+                    k.GetComponent<Hexa>().color_random();
+                }
+            }
+            }
+        }
+        else{
+            while (!get_hint()){
                 foreach (GameObject k in slot_avail){
                     k.GetComponent<Hexa>().color_random();
                 }
             }
         }
+
+        
         foreach (GameObject i in slot_avail){
             i.GetComponent<Hexa>().create_hex();
         }
@@ -337,7 +409,7 @@ public class board : MonoBehaviour
             idle = true;
         else{
             yield return new WaitForSeconds(0.6f);
-            GameObject.Find("Level_handler").GetComponent<ClassicHandler>().gameover();
+            GameObject.Find("Level_handler").GetComponent<Handler>().gameover();
         }
            
     }
@@ -371,73 +443,75 @@ public class board : MonoBehaviour
         dim_timer+=0.4f;
         //GameObject score_text = Instantiate(pointstext,drag_list[0].transform.position,Quaternion.identity);
         //score_text.GetComponent<Score_text>().update_points(20);
-        GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(20);
-        for (int i = hex.GetComponent<Hexa>().pos.x-1;i<hex.GetComponent<Hexa>().pos.x+2;i++){
-            for (int j = hex.GetComponent<Hexa>().pos.y-1;j<hex.GetComponent<Hexa>().pos.y+2;j++){
-                
-                if (!is_legit(new Vector2Int(i,j)))
+        GameObject.Find("Level_handler").GetComponent<Handler>().update_score(20);
+        foreach (var k in hex.GetComponent<Hexa>().get_all_surrounded()){
+            if (!is_legit(k.GetComponent<Hexa>().pos))
                     continue;
-                //Debug.Log(exploded.Count);
-                if (exploded.Contains(hexagons[i,j]))
+            if (exploded.Contains(k))
                     continue;
-                if (invicible.Contains(hexagons[i,j]))
+            if (invicible.Contains(k))
                     continue;
-                //Debug.Log("hehe");
-                if (hexagons[i,j].GetComponent<Hexa>().type==Hexa_Type.BOMB){
-                    StartCoroutine(delay_bomb(0.1f,hexagons[i,j]));
-                }
-                else if (hexagons[i,j].GetComponent<Hexa>().type==Hexa_Type.LINE){
-                    StartCoroutine(lasering(hexagons[i,j]));
-                }
-                else if (hexagons[i,j].GetComponent<Hexa>().type==Hexa_Type.WILD){
-                    detonate(hexagons[i,j]);
-                }
-                else{
-                    //Debug.Log("hehe");
-                    exploded.Add(hexagons[i,j]);
-                    hexagons[i,j].GetComponent<Hexa>().explode();
-                    Instantiate(effects[0],hexagons[i,j].transform.position,Quaternion.identity);
-                }
-                //score_text.GetComponent<Score_text>().update_points(20);
-                GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(20);
+            if (k.GetComponent<Hexa>().type==Hexa_Type.BOMB){
+                StartCoroutine(delay_bomb(0.1f,k));
             }
+            else if (k.GetComponent<Hexa>().type==Hexa_Type.LINE){
+                    StartCoroutine(lasering(k));
+            }
+            else if (k.GetComponent<Hexa>().type==Hexa_Type.WILD){
+                    detonate(k);
+            }
+            else{
+                    //Debug.Log("hehe");
+                    exploded.Add(k);
+                    foreach (var item in k.GetComponent<Hexa>().get_all_surrounded()){
+                        if (!exploded.Contains(item)){
+                            StartCoroutine(item.GetComponent<Hexa>().knockback(
+                                (grid_to_pix(item.GetComponent<Hexa>().pos.x,item.GetComponent<Hexa>().pos.y)
+                                - grid_to_pix(k.GetComponent<Hexa>().pos.x,k.GetComponent<Hexa>().pos.y)).normalized,0.5f));
+                        }
+                    }
+                    //dimmed.Remove(k);
+                    k.GetComponent<Hexa>().explode();
+                    Instantiate(effects[0],grid_to_pix(k.GetComponent<Hexa>().pos.x,k.GetComponent<Hexa>().pos.y),Quaternion.identity);
+            }
+            //score_text.GetComponent<Score_text>().update_points(20);
+            GameObject.Find("Level_handler").GetComponent<Handler>().update_score(20);
         }
     }
 
     IEnumerator lasering(GameObject hex){
         dim_timer+=0.3f;
+        
+        StartCoroutine(hex.GetComponent<Hexa>().bursting());
+        AudioManager.instance.Play("electro_start");
+        yield return new WaitForSeconds(0.4f);
+        GameObject t = Instantiate(effects[1],hex.transform.position,Quaternion.identity);
+        //yield return new WaitForSeconds(0.2f);
         if (!exploded.Contains(hex)){
             exploded.Add(hex);
-            if (!invicible.Contains(hex)){
-                hex.GetComponent<Hexa>().explode();
-                Instantiate(effects[1],hex.transform.position,Quaternion.identity);
-            }
+            
         }
         AudioManager.instance.Play("electro");
         Vector2Int pos = hex.GetComponent<Hexa>().pos;
         List<GameObject> target = new List<GameObject>();
         //GameObject score_text = Instantiate(pointstext,drag_list[0].transform.position,Quaternion.identity);
         //score_text.GetComponent<Score_text>().update_points(50);
-        GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(50);
-        for (int k = 0;k<Mathf.Max(boardHeight,boardWidth);k++){
-            if (is_legit(pos+new Vector2Int(0,k))){
-                target.Add(hexagons[pos.x,pos.y+k]);
-                
+        Vector2Int grid = hex.GetComponent<Hexa>().pos;
+        for (int k = 0;k<20;k++){
+            for (int angle = 30;angle<360;angle += 60){
+                Vector2Int newgrid = pix_to_grid(grid_to_pix(grid.x,grid.y)+ new Vector2(Mathf.Cos(Mathf.Deg2Rad*angle),Mathf.Sin(Mathf.Deg2Rad*angle))*0.94f*k);
+                if (is_legit(newgrid)){
+                    if (!target.Contains(hexagons[newgrid.x,newgrid.y])){
+                        target.Add(hexagons[newgrid.x,newgrid.y]);
+                    }
+                }
             }
-            if (is_legit(pos+new Vector2Int(k,0))){
-                target.Add(hexagons[pos.x+k,pos.y]);
-                
-            }
-            if (is_legit(pos+new Vector2Int(0,-k))){
-                target.Add(hexagons[pos.x,pos.y-k]);
-               
-            }
-            if (is_legit(pos+new Vector2Int(-k,0))){
-                target.Add(hexagons[pos.x-k,pos.y]);
-                
-            }
+            
+            
         }
-        dim_timer+=0.6f;
+        GameObject.Find("Level_handler").GetComponent<Handler>().update_score(50);
+        
+        dim_timer+=0.075f*target.Count;
         foreach (GameObject i in target){
             if (exploded.Contains(i))
                 continue;
@@ -447,21 +521,26 @@ public class board : MonoBehaviour
                 detonate(i);
             }
             else if (i.GetComponent<Hexa>().type == Hexa_Type.LINE){
-                lasering(i);
+                StartCoroutine(lasering(i));
             }
             else if (i.GetComponent<Hexa>().type==Hexa_Type.WILD){
                 detonate(i);
             }
             else{
                 exploded.Add(i);
+                //dimmed.Remove(i);
                 i.GetComponent<Hexa>().explode();
-                GameObject t = Instantiate(effects[1],i.transform.position,Quaternion.identity);
+                //GameObject t = Instantiate(effects[1],i.transform.position,Quaternion.identity);
             }
             
             //score_text.GetComponent<Score_text>().update_points(50);
-            GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(50);
+            GameObject.Find("Level_handler").GetComponent<Handler>().update_score(25);
             AudioManager.instance.Play("gem_explode");
-            yield return new WaitForSeconds(0.02f);
+            
+            yield return new WaitForSeconds(0.075f);
+        }
+        if (!invicible.Contains(hex)){
+                hex.GetComponent<Hexa>().explode();
         }
     }
     IEnumerator color_clear(GameObject bomb, Sprite color){
@@ -477,7 +556,7 @@ public class board : MonoBehaviour
         dim_timer+=0.3f;
         //GameObject score_text = Instantiate(pointstext,drag_list[0].transform.position,Quaternion.identity);
         //score_text.GetComponent<Score_text>().update_points(50);
-        GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(50);
+        GameObject.Find("Level_handler").GetComponent<Handler>().update_score(50);
         yield return new WaitForSeconds(0.3f);
         //Vector2Int pos = bomb.GetComponent<Hexa>().pos;
         List<GameObject> target = new List<GameObject>();
@@ -508,62 +587,15 @@ public class board : MonoBehaviour
                    // GameObject t = Instantiate(effects[1],hexagons[i,j].transform.position,Quaternion.identity);
                 }
             //score_text.GetComponent<Score_text>().update_points(50);
-            GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(50);
+            GameObject.Find("Level_handler").GetComponent<Handler>().update_score(50);
             AudioManager.instance.Play("gem_explode");
             }
         }
         dim_timer+=0.5f;
         //yield return new WaitForSeconds(3.0f);
     }
-    public GameObject get_hint(){
-        int[,] temp = new int[boardWidth, boardHeight];
-        bool[,] visited = new bool[boardWidth, boardHeight];
-        for (int i = 0; i < boardWidth; i++)
-        {
-            for (int j = 0; j < boardHeight; j++)
-            {
-                temp[i,j] = 0;
-                visited[i,j] = false;
-            }
-        }
-        for (int i = 0; i < boardWidth; i++)
-        {
-            for (int j = 0; j < boardHeight; j++)
-            {
-                if (temp[i,j]==0){
-                    temp[i,j] = 1;
-                    visited[i,j] = true;
-                }
-                foreach (var k in hexagons[i,j].GetComponent<Hexa>().get_all_surrounded()){
-                    if (!visited[k.GetComponent<Hexa>().pos.x,k.GetComponent<Hexa>().pos.y]&&hexagons[i,j].GetComponent<Hexa>().color==k.GetComponent<Hexa>().color){
-                        temp[k.GetComponent<Hexa>().pos.x,k.GetComponent<Hexa>().pos.y] = temp[i,j]+1;
-                        visited[k.GetComponent<Hexa>().pos.x,k.GetComponent<Hexa>().pos.y] = true;
-                    }
-                }
-            }
-        }
-        
-        List<GameObject> available = new List<GameObject>();
-        for (int i = 0; i < boardWidth; i++)
-        {
-            for (int j = 0; j < boardHeight; j++)
-            {
-                if (hexagons[i,j].GetComponent<Hexa>().type==Hexa_Type.WILD){
-                    available.Add(hexagons[i,j]);
-                }
-                else if (temp[i,j]>=3) {
-                    available.Add(hexagons[i,j]);
-                }
-            }
-        }
-        if (available.Count==0){
-            //Debug.Log("no more moves");
-            return null;
-        }
-        //Debug.Log(available.Count);
-        return available[Mathf.FloorToInt(Random.Range(0,available.Count))];
-    }
-    IEnumerator clear_all(GameObject bomb){
+    
+    IEnumerator clear_all(GameObject bomb, GameObject bomb2){
         
         dim_timer+=0.3f;
         if (!exploded.Contains(bomb)){
@@ -573,10 +605,17 @@ public class board : MonoBehaviour
                 Instantiate(effects[2],bomb.transform.position,Quaternion.identity);
             }
         }
+        if (!exploded.Contains(bomb2)){
+            exploded.Add(bomb2);
+            if (!invicible.Contains(bomb2)){
+                bomb.GetComponent<Hexa>().explode();
+                Instantiate(effects[2],bomb2.transform.position,Quaternion.identity);
+            }
+        }
         dim_timer+=0.3f;
         //GameObject score_text = Instantiate(pointstext,drag_list[0].transform.position,Quaternion.identity);
         //score_text.GetComponent<Score_text>().update_points(50);
-        GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(50);
+        GameObject.Find("Level_handler").GetComponent<Handler>().update_score(50);
         AudioManager.instance.Play("void");
         yield return new WaitForSeconds(0.3f);
         //Vector2Int pos = bomb.GetComponent<Hexa>().pos;
@@ -604,12 +643,169 @@ public class board : MonoBehaviour
                     //GameObject t = Instantiate(effects[1],hexagons[i,j].transform.position,Quaternion.identity);
                 }
                 //score_text.GetComponent<Score_text>().update_points(50);
-                GameObject.Find("Level_handler").GetComponent<ClassicHandler>().update_score(50);
+                GameObject.Find("Level_handler").GetComponent<Handler>().update_score(50);
                 AudioManager.instance.Play("gem_explode");
             }
         }
         dim_timer+=0.5f;
         yield return new WaitForSeconds(3.0f);
+    }
+
+
+    //hint and checking available matches
+    public int[,] temp;
+    public bool[,] visited;
+
+    public void dfs(GameObject current, GameObject prev = null){
+        if (!prev){
+            temp[current.GetComponent<Hexa>().pos.x,current.GetComponent<Hexa>().pos.y] = 1;
+            visited[current.GetComponent<Hexa>().pos.x,current.GetComponent<Hexa>().pos.y] = true;
+        } else{
+            temp[current.GetComponent<Hexa>().pos.x,current.GetComponent<Hexa>().pos.y] = Mathf.Max(temp[current.GetComponent<Hexa>().pos.x,current.GetComponent<Hexa>().pos.y],temp[prev.GetComponent<Hexa>().pos.x,prev.GetComponent<Hexa>().pos.y]+1);
+            visited[current.GetComponent<Hexa>().pos.x,current.GetComponent<Hexa>().pos.y] = true;
+        }
+        foreach (var k in current.GetComponent<Hexa>().get_all_surrounded()){
+            if ((!visited[k.GetComponent<Hexa>().pos.x,k.GetComponent<Hexa>().pos.y])&&current.GetComponent<Hexa>().color==k.GetComponent<Hexa>().color){
+                dfs(k,current);
+            }
+        }
+
+        
+    }
+    int match_id = 0;
+    public void bfs(GameObject obj){
+        List<GameObject> query = new List<GameObject>();
+        GameObject current;
+        temp[obj.GetComponent<Hexa>().pos.x,obj.GetComponent<Hexa>().pos.y] = match_id++;
+        matches.Add(new List<GameObject>());
+        
+        //GameObject prev;
+        query.Add(obj);
+        while (query.Count>0){
+            current = query[0];
+            query.RemoveAt(0);
+            visited[current.GetComponent<Hexa>().pos.x,current.GetComponent<Hexa>().pos.y] = true;
+            matches[temp[obj.GetComponent<Hexa>().pos.x,obj.GetComponent<Hexa>().pos.y]].Add(current);
+            foreach (var k in current.GetComponent<Hexa>().get_all_surrounded()){
+            if ((!visited[k.GetComponent<Hexa>().pos.x,k.GetComponent<Hexa>().pos.y])&&current.GetComponent<Hexa>().color==k.GetComponent<Hexa>().color&&k.GetComponent<Hexa>().status!=STATE.LOCKED){
+                temp[k.GetComponent<Hexa>().pos.x,k.GetComponent<Hexa>().pos.y] = temp[current.GetComponent<Hexa>().pos.x,current.GetComponent<Hexa>().pos.y];
+                query.Add(k);
+            }
+        }
+        }
+    }
+    bool void_locked(GameObject voidhex){
+        foreach (var k in voidhex.GetComponent<Hexa>().get_all_surrounded()){
+            if (k.GetComponent<Hexa>().status==STATE.FREE){
+                return false;
+            }
+        }
+        return true;
+    }
+    List<List<GameObject>> matches;
+    public GameObject get_hint(){
+        //return null;
+        temp = new int[boardWidth, boardHeight];
+        visited = new bool[boardWidth, boardHeight];
+        match_id = 0;
+        matches = new List<List<GameObject>>();
+        for (int i = 0; i < boardWidth; i++)
+        {
+            for (int j = 0; j < boardHeight; j++)
+            {
+                visited[i,j] = false;
+                temp[i,j] = -1;
+            }
+        }
+        for (int i = 0; i < boardHeight; i++)
+        {
+            for (int j = 0; j < boardWidth; j++)
+            {
+                if (!visited[j,i]&&hexagons[j,i].GetComponent<Hexa>().type!=Hexa_Type.WILD&&hexagons[j,i].GetComponent<Hexa>().status!=STATE.LOCKED)
+                    //dfs(hexagons[j,i]);
+                    bfs(hexagons[j,i]);
+            }
+        }
+
+        
+
+        List<GameObject> available = new List<GameObject>();
+        for (int i = 0; i < boardWidth; i++)
+        {
+            for (int j = 0; j < boardHeight; j++)
+            {
+                //hexagons[i,j].GetComponentInChildren<TextMeshPro>().text = temp[i,j].ToString();
+                if (hexagons[i,j].GetComponent<Hexa>().type==Hexa_Type.WILD&&!void_locked(hexagons[i,j])){
+                    available.Add(hexagons[i,j]);
+                }
+            }
+        }
+        foreach (var i in matches){
+            if (i.Count>=3){
+                available.Add(i[0]);
+            }
+        }
+        Debug.Log(available.Count);
+        if (available.Count==0){
+            //Debug.Log("no more moves");
+            return null;
+        }
+        //Debug.Log(available.Count);
+        return available[Mathf.FloorToInt(Random.Range(0,available.Count))];
+    }
+    int count_locks(){
+        int res = 0;
+        for (int i = 0; i < boardWidth; i++)
+        {
+            for (int j = 0; j < boardHeight; j++)
+            {
+                if (is_legit(new Vector2Int(i,j))&&hexagons[i,j].GetComponent<Hexa>().lock_ins){
+                    res++;
+                }
+            }
+        }
+        return res;
+    }
+    public void lock_create(){
+        //int max_locks = Random.Range(0,(Handler.level-3)/(Handler.level-3));
+        
+        for (int i = 0; i < boardWidth; i++)
+            for (int j = 0; j < boardHeight; j++)
+            {
+                if (!is_legit(new Vector2Int(i,j))){
+                    continue;
+                }
+                
+                if (hexagons[i,j].GetComponent<Hexa>().lock_ins==null && hexagons[i,j].GetComponent<Hexa>().type == Hexa_Type.NORMAL&&Random.Range(0,200-GameObject.Find("Level_handler").GetComponent<Handler>().difficulty)<=0){
+                    //Debug.Log(121);
+                    hexagons[i,j].GetComponent<Hexa>().lock_create();
+                    return;
+                }
+            }
+
+        }
+
+    public void update_lock(){
+        for (int i = 0; i < boardWidth; i++)
+        {
+            for (int j = 0; j < boardHeight; j++)
+            {
+                if (is_legit(new Vector2Int(i,j))&&hexagons[i,j].GetComponent<Hexa>().lock_ins&&hexagons[i,j].GetComponent<Hexa>().status== STATE.FREE){
+                    hexagons[i,j].GetComponentInChildren<HexLock>().lock_counter();
+                }
+            }
+        }
+    }
+    public void check_lock(){
+        for (int i = 0; i < boardWidth; i++)
+        {
+            for (int j = 0; j < boardHeight; j++)
+            {
+                if (is_legit(new Vector2Int(i,j))&&hexagons[i,j].GetComponent<Hexa>().lock_ins&&hexagons[i,j].GetComponent<Hexa>().status== STATE.FREE){
+                    hexagons[i,j].GetComponentInChildren<HexLock>().lock_check();
+                }
+            }
+        }
     }
 }
 
