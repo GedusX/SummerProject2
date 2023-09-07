@@ -225,7 +225,7 @@ public class board : MonoBehaviour
                 newHexagon.transform.parent = this.transform;
                 
                 newHexagon.transform.Find("board_border").Find("board_border_1").gameObject.SetActive(j == boardHeight-1);
-                newHexagon.transform.Find("board_border").Find("board_border_2").gameObject.SetActive((j == boardHeight-1 && i%2!=0)||(i == boardWidth));
+                newHexagon.transform.Find("board_border").Find("board_border_2").gameObject.SetActive((j == boardHeight-1 && i%2!=0)||(i == boardWidth-1));
                 newHexagon.transform.Find("board_border").Find("board_border_3").gameObject.SetActive((j == 0 && i%2==0)||(i == boardWidth-1));
                 newHexagon.transform.Find("board_border").Find("board_border_4").gameObject.SetActive(j == 0);
                 newHexagon.transform.Find("board_border").Find("board_border_5").gameObject.SetActive((j == 0 && i%2==0)||(i == 0));
@@ -293,11 +293,15 @@ public class board : MonoBehaviour
                 AudioManager.instance.Play("select");
             }
             else{
+                if (!is_next_to(drag_list[drag_list.Count-1],hex)){
+                    return;
+                }
                 if (drag_list[0].GetComponent<Hexa>().type==Hexa_Type.WILD){
                     if (drag_list.Count>=2){
                         legal_move = (drag_list.Count>=3||(drag_list.Count==2&&drag_list[0].GetComponent<Hexa>().type == Hexa_Type.WILD));
                         return;
                     }
+                    
                     drag_list.Add(hex);
                     AudioManager.instance.Play("select");
                 }
@@ -380,15 +384,16 @@ public class board : MonoBehaviour
         }
         yield return new WaitUntil(() => (num_of_hex() >= boardHeight*boardWidth));
         if (GameObject.Find("Level_handler").GetComponent<Handler>().no_move){
-            if (get_hint()){
-
-            }
-            else {
-            for (int i = 0;i<=100-GameObject.Find("Level_handler").GetComponent<Handler>().difficulty;i++){
-                foreach (GameObject k in slot_avail){
-                    k.GetComponent<Hexa>().color_random();
+            for (int i = 0;i<=(100-GameObject.Find("Level_handler").GetComponent<Handler>().difficulty)/10;i++){
+                if (get_hint()){
+                    break;
+                }
+                else {
+                    foreach (GameObject k in slot_avail){
+                        k.GetComponent<Hexa>().color_random();
                 }
             }
+
             }
         }
         else{
@@ -768,21 +773,22 @@ public class board : MonoBehaviour
     }
     public void lock_create(){
         //int max_locks = Random.Range(0,(Handler.level-3)/(Handler.level-3));
-        
-        for (int i = 0; i < boardWidth; i++)
-            for (int j = 0; j < boardHeight; j++)
-            {
+
+        if (Random.Range(0,105-GameObject.Find("Level_handler").GetComponent<Handler>().difficulty)<=0){
+            for (int t = 0; t <= boardHeight*boardWidth;t++){
+                int i = Random.Range(0,boardWidth);
+                int j = Random.Range(0,boardHeight);
                 if (!is_legit(new Vector2Int(i,j))){
                     continue;
                 }
-                
-                if (hexagons[i,j].GetComponent<Hexa>().lock_ins==null && hexagons[i,j].GetComponent<Hexa>().type == Hexa_Type.NORMAL&&Random.Range(0,200-GameObject.Find("Level_handler").GetComponent<Handler>().difficulty)<=0){
+                if (hexagons[i,j].GetComponent<Hexa>().lock_ins==null && hexagons[i,j].GetComponent<Hexa>().type == Hexa_Type.NORMAL){
                     //Debug.Log(121);
                     hexagons[i,j].GetComponent<Hexa>().lock_create();
                     return;
                 }
-            }
 
+            }
+        }
         }
 
     public void update_lock(){
