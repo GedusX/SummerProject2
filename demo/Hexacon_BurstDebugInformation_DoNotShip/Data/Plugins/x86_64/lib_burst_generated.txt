@@ -116,6 +116,8 @@ Library: lib_burst_generated
 --compilation-defines=PACKAGE_UITOOLKIT
 --compilation-defines=CSHARP_7_OR_LATER
 --compilation-defines=CSHARP_7_3_OR_NEWER
+--compilation-defines=ENABLE_VR_MODULE
+--compilation-defines=ENABLE_XR_MODULE
 --compilation-defines=MODULE_AI_EXISTS
 --compilation-defines=MODULE_ANIMATION_EXISTS
 --compilation-defines=MODULE_PHYSICS_EXISTS
@@ -128,6 +130,7 @@ Library: lib_burst_generated
 --generate-link-xml=Temp\burst.link.xml
 --output=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Plugins\x86_64\lib_burst_generated
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\UnityEngine.UI.dll
+--root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.RenderPipelines.Core.Runtime.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.VisualScripting.Flow.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.Mathematics.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.Services.Core.Telemetry.dll
@@ -154,8 +157,10 @@ Library: lib_burst_generated
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.2D.Tilemap.Extras.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.Services.Core.Networking.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Assembly-CSharp-firstpass.dll
+--root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.RenderPipelines.Core.ShaderLibrary.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.InternalAPIEngineBridge.001.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.Services.Core.Configuration.dll
+--root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll
 --assembly-folder=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\
 --pdb-search-paths=Temp/ManagedSymbols/
 --method=Unity.Burst.BurstCompiler+BurstCompilerHelper, Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::IsBurstEnabled()--8c2be93e18276203cbd918daa2748a10
@@ -280,6 +285,8 @@ Library: lib_burst_generated
 --compilation-defines=PACKAGE_UITOOLKIT
 --compilation-defines=CSHARP_7_OR_LATER
 --compilation-defines=CSHARP_7_3_OR_NEWER
+--compilation-defines=ENABLE_VR_MODULE
+--compilation-defines=ENABLE_XR_MODULE
 --compilation-defines=MODULE_AI_EXISTS
 --compilation-defines=MODULE_ANIMATION_EXISTS
 --compilation-defines=MODULE_PHYSICS_EXISTS
@@ -292,6 +299,7 @@ Library: lib_burst_generated
 --generate-link-xml=Temp\burst.link.xml
 --output=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Plugins\x86_64\lib_burst_generated
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\UnityEngine.UI.dll
+--root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.RenderPipelines.Core.Runtime.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.VisualScripting.Flow.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.Mathematics.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.Services.Core.Telemetry.dll
@@ -318,8 +326,10 @@ Library: lib_burst_generated
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.2D.Tilemap.Extras.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.Services.Core.Networking.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Assembly-CSharp-firstpass.dll
+--root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.RenderPipelines.Core.ShaderLibrary.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.InternalAPIEngineBridge.001.dll
 --root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.Services.Core.Configuration.dll
+--root-assembly=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll
 --assembly-folder=F:\github\SummerProject2\Hexacon\Temp\StagingArea\Data\Managed\
 --pdb-search-paths=Temp/ManagedSymbols/
 --method=Unity.Burst.BurstCompiler+BurstCompilerHelper, Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null::IsBurstEnabled()--8c2be93e18276203cbd918daa2748a10

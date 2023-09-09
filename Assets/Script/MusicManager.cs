@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using DG.Tweening;
 
 public class MusicManager : MonoBehaviour {
 
@@ -68,12 +69,16 @@ public class MusicManager : MonoBehaviour {
 
 	public IEnumerator fading(string sound, float fade_sec){
 		Sound s = Array.Find(sounds, item => item.name == sound);
-		while (s.volume > 0.01f)
-        {
-            s.source.volume -= (Time.deltaTime / fade_sec);
-            yield return null;
-        }
-		s.source.Stop();
+		DOTween.To(() => s.source.volume, x => s.source.volume = x, 0f, fade_sec);
+		yield return new WaitForSeconds(fade_sec);
+		//s.source.Stop();
+		//yield return new WaitForSeconds(0.0f);
+	}
+	public IEnumerator fadin(string sound, float fade_sec){
+		Sound s = Array.Find(sounds, item => item.name == sound);
+		DOTween.To(() => s.source.volume, x => s.source.volume = x, s.volume, fade_sec);
+		yield return new WaitForSeconds(fade_sec);
+		//s.source.Stop();
 		//yield return new WaitForSeconds(0.0f);
 	}
 

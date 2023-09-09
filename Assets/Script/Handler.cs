@@ -13,10 +13,14 @@ public abstract class Handler : MonoBehaviour
     public abstract void update_score(int sc);
     public abstract void gameover();
 
+    //public abstract void hint();
+
 
     //some config
     public int max_lock_on_board = 15;
     public bool no_move;
+
+    public List<GameObject> holding;
 
     public int difficulty;
 

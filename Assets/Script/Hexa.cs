@@ -103,7 +103,7 @@ public class Hexa : MonoBehaviour
         
         lock_ins = Instantiate(lock_prefab,transform.position,Quaternion.identity);
         lock_ins.transform.SetParent(transform);
-        lock_ins.GetComponent<HexLock>().lock_start(index + ((Handler.level<4)?(4-Handler.level):0));
+        lock_ins.GetComponent<HexLock>().lock_start(17-(GameObject.Find("Level_handler").GetComponent<Handler>().difficulty)/10);
         lock_ins.transform.localScale = new Vector3(1,1,1);
     }
     IEnumerator deleting(){
@@ -191,5 +191,19 @@ public class Hexa : MonoBehaviour
             transform.DOMove(GetComponentInParent<board>().grid_to_pix(pos.x,pos.y),0.08f);
             yield return new WaitForSeconds(0.08f);
         }
+    }
+
+    public IEnumerator jump_in_void(float jumpforce){
+        transform.DOScale(transform.localScale*jumpforce,0.5f).SetEase(Ease.OutQuad);
+
+        yield return new WaitForSeconds(0.5f);
+        Sequence sq = DOTween.Sequence();
+        sq.Append(transform.DOScale(Vector3.zero,0.3f).SetEase(Ease.InQuad));
+        sq.Join(transform.DOMove(Vector3.zero,0.3f).SetEase(Ease.InOutQuad));
+        sq.Play();
+        AudioManager.instance.Play("explode");
+        yield return new WaitForSeconds(0.5f);
+        if (!GameObject.Find("Level_handler").GetComponent<Handler>().holding.Contains(gameObject))
+            Destroy(gameObject);
     }
 }

@@ -7,9 +7,9 @@ public class board : MonoBehaviour
 {
     
     // The width of the board in cells
-    [SerializeField] int boardWidth;
+    [SerializeField] public int boardWidth;
     // The height of the board in cells
-    [SerializeField] int boardHeight;
+    [SerializeField] public int boardHeight;
     // The prefab of an object
     [SerializeField] GameObject hexagon;
 
@@ -20,7 +20,7 @@ public class board : MonoBehaviour
     float dim_timer;
 
     // The 2D array to store the objects, while i represents for col (x), and j represents for row (y);
-    [SerializeField] private GameObject[,] hexagon_slots;
+    [SerializeField] public GameObject[,] hexagon_slots;
     
 
     [SerializeField] public GameObject[,] hexagons;
@@ -70,7 +70,7 @@ public class board : MonoBehaviour
             dim_timer = 0;
         
         if (Input.GetMouseButton(0)){
-            Debug.Log(pix_to_grid(Camera.main.ScreenToWorldPoint(Input.mousePosition)));
+            //Debug.Log(pix_to_grid(Camera.main.ScreenToWorldPoint(Input.mousePosition)));
             Vector2Int grid = pix_to_grid(Camera.main.ScreenToWorldPoint(Input.mousePosition));
             if (is_legit(grid)){
                 hexagons[grid.x,grid.y].GetComponent<Hexa>().ClickOn();
@@ -206,7 +206,7 @@ public class board : MonoBehaviour
     {
         // Initialize the array
         hexagon_slots = new GameObject[boardWidth, boardHeight];
-        hexagons = new GameObject[boardWidth, boardHeight];
+        
         
 
         // Calculate the offset between adjacent objects
@@ -233,14 +233,29 @@ public class board : MonoBehaviour
                 
                 // Store the object in the array
                 hexagon_slots[i, j] = newHexagon;
-                hexagons[i,j] = null;
             }
         }
         
         StartCoroutine(fill_up());
     }
-    IEnumerator fill_up(){
+    public IEnumerator fill_up(){
         idle = false;
+        hexagons = new GameObject[boardWidth, boardHeight];
+        for (int i = 0; i < boardWidth; i++)
+            for (int j = 0; j < boardHeight; j++)
+                hexagons[i,j] = null;
+        foreach (GameObject i in GameObject.Find("Level_handler").GetComponent<Handler>().holding.ToArray()){
+            while (true){
+                int x = Random.Range(0,boardWidth);
+                int y = Random.Range(0,boardHeight);
+                if (!hexagons[x,y]){
+                    hexagons[x,y] = i;
+                    hexagons[x,y].transform.position = grid_to_pix(x,y);
+                    GameObject.Find("Level_handler").GetComponent<Handler>().holding.Remove(i);
+                    break;
+                }
+            }
+        }
         for (int i = 0; i < boardWidth; i++)
         {
             for (int j = 0; j < boardHeight; j++)
@@ -301,7 +316,8 @@ public class board : MonoBehaviour
                         legal_move = (drag_list.Count>=3||(drag_list.Count==2&&drag_list[0].GetComponent<Hexa>().type == Hexa_Type.WILD));
                         return;
                     }
-                    
+                    if (hex.GetComponent<Hexa>().type==Hexa_Type.WILD)
+                        return;
                     drag_list.Add(hex);
                     AudioManager.instance.Play("select");
                 }
@@ -750,7 +766,7 @@ public class board : MonoBehaviour
                 available.Add(i[0]);
             }
         }
-        Debug.Log(available.Count);
+        //Debug.Log(available.Count);
         if (available.Count==0){
             //Debug.Log("no more moves");
             return null;
@@ -774,7 +790,8 @@ public class board : MonoBehaviour
     public void lock_create(){
         //int max_locks = Random.Range(0,(Handler.level-3)/(Handler.level-3));
 
-        if (Random.Range(0,105-GameObject.Find("Level_handler").GetComponent<Handler>().difficulty)<=0){
+        for (int bomb = 0; bomb<=Random.Range(1,GameObject.Find("Level_handler").GetComponent<Handler>().difficulty/10+1);bomb++){
+        if (Random.Range(0,107-GameObject.Find("Level_handler").GetComponent<Handler>().difficulty)<=0){
             for (int t = 0; t <= boardHeight*boardWidth;t++){
                 int i = Random.Range(0,boardWidth);
                 int j = Random.Range(0,boardHeight);
@@ -788,6 +805,7 @@ public class board : MonoBehaviour
                 }
 
             }
+        }
         }
         }
 

@@ -13,7 +13,8 @@ public class mainmenu : MonoBehaviour
     public void playgame(){
         ClassicHandler.score = 0;
         ClassicHandler.level = 1;
-        SceneManager.LoadScene("Scenes/SampleScene",LoadSceneMode.Single);
+        StartCoroutine(SceneLoader.instance.transition("Scenes/Classic",Vector2.zero));
+
     }
     public void quit(){
         Application.Quit();

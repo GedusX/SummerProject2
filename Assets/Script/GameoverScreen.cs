@@ -13,12 +13,12 @@ public class GameoverScreen : MonoBehaviour
         GameObject.Find("finalscore").GetComponent<TextMeshProUGUI>().text = "your final score:\n" + ClassicHandler.score.ToString();
     }
     public void mainmenu(){
-        SceneManager.LoadScene("Scenes/Menu",LoadSceneMode.Single);
+        StartCoroutine(SceneLoader.instance.transition("Scenes/Menu",Vector2.zero));
     }
     public void replay(){
         ClassicHandler.score = 0;
         ClassicHandler.level = 1;
-        SceneManager.LoadScene("Scenes/SampleScene",LoadSceneMode.Single);
+        StartCoroutine(SceneLoader.instance.transition("Scenes/Classic",Vector2.zero));
 
     }
     // Update is called once per frame
