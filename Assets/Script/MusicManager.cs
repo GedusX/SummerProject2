@@ -32,6 +32,18 @@ public class MusicManager : MonoBehaviour {
 			s.source.loop = s.loop;
 		}
 	}
+	public void VolumeChange(){
+		foreach (Sound s in sounds)
+		{
+			//s.source = gameObject.AddComponent<AudioSource>();
+			//s.source.clip = s.clip;
+			
+			s.source.volume = s.volume * GlobalConfig.music_volume;
+			s.source.mute = GlobalConfig.music_volume==0;
+			//s.source.pitch = s.pitch;
+			//s.source.loop = s.loop;
+		}
+	}
 
 	public void Play(string sound)
 	{
@@ -41,24 +53,33 @@ public class MusicManager : MonoBehaviour {
 		}
 		
 		Sound s = Array.Find(sounds, item => item.name == sound);
-		s.source.clip = s.clip;
-		s.source.volume = s.volume;
-		s.source.pitch = s.pitch;
-		s.source.loop = s.loop;
+		//s.source.clip = s.clip;
+		s.source.volume = s.volume*GlobalConfig.music_volume;
+		s.source.mute = GlobalConfig.music_volume==0;
+		//s.source.pitch = s.pitch;
+		//s.source.loop = s.loop;
 		s.source.Play();
+		
 	}
 	
 	
 
-	public void PlayOneshot(string sound)
-	{
-		Sound s = Array.Find(sounds, item => item.name == sound);
-		s.source.PlayOneShot(s.clip);
-	}
 	public void Stop(string sound)
 	{
 		Sound s = Array.Find(sounds, item => item.name == sound);
 		s.source.Stop();
+	}
+	public void Pause(string sound)
+	{
+		Sound s = Array.Find(sounds, item => item.name == sound);
+		s.timemark = s.source.time;
+		s.source.Stop();
+	}
+	public void Continue(string sound)
+	{
+		Sound s = Array.Find(sounds, item => item.name == sound);
+		s.source.Play();
+		s.source.time = s.timemark;
 	}
 	public void StopAll(){
 		foreach (Sound ss in sounds)
@@ -76,7 +97,7 @@ public class MusicManager : MonoBehaviour {
 	}
 	public IEnumerator fadin(string sound, float fade_sec){
 		Sound s = Array.Find(sounds, item => item.name == sound);
-		DOTween.To(() => s.source.volume, x => s.source.volume = x, s.volume, fade_sec);
+		DOTween.To(() => s.source.volume, x => s.source.volume = x, s.volume*GlobalConfig.music_volume, fade_sec);
 		yield return new WaitForSeconds(fade_sec);
 		//s.source.Stop();
 		//yield return new WaitForSeconds(0.0f);

@@ -10,7 +10,12 @@ public class GameoverScreen : MonoBehaviour
     void Start()
     {
         //MusicManager.instance.Play("gameover");
-        GameObject.Find("finalscore").GetComponent<TextMeshProUGUI>().text = "your final score:\n" + ClassicHandler.score.ToString();
+        GameObject.Find("finalscore").GetComponent<TextMeshProUGUI>().text = ClassicHandler.score.ToString("N0");
+        GameObject.Find("hex_num").GetComponent<TextMeshProUGUI>().text = ClassicHandler.stat.num_of_hex.ToString("N0");
+        GameObject.Find("bomb_num").GetComponent<TextMeshProUGUI>().text = ClassicHandler.stat.num_of_bomb.ToString("N0");
+        GameObject.Find("laser_num").GetComponent<TextMeshProUGUI>().text = ClassicHandler.stat.num_of_laser.ToString("N0");
+        GameObject.Find("void_num").GetComponent<TextMeshProUGUI>().text = ClassicHandler.stat.num_of_void.ToString("N0");
+        GameObject.Find("level_text").gameObject.GetComponent<TextMeshPro>().text = ClassicHandler.stat.level.ToString();
     }
     public void mainmenu(){
         StartCoroutine(SceneLoader.instance.transition("Scenes/Menu",Vector2.zero));

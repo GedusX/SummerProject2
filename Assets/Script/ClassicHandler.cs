@@ -9,39 +9,62 @@ public class ClassicHandler : Handler
 {
     // Start is called before the first frame update
     //public List<GameObject> holding;
-    public int display_score;
-    public float multiplier; 
+    
+    public float display_score;
+    
     //public int difficulty;
     private GameObject background;
     private GameObject background_old;
+    
+    
     private board bd;
+
+    public static ClassicStat stat;
 
     [SerializeField] private List<GameObject> bgavail;
 
     [SerializeField] private GameObject hex_mask;
     
     public int milestone(int lvl){
-        return (lvl*lvl)*1500;
+        int base_score = 2500;
+        float increase_factor = 1.7f;
+        return Mathf.RoundToInt(base_score * Mathf.Pow(increase_factor,(lvl-1)));
+    }
+    private void Awake() {
+        //instance = new ClassicHandler();
+        if (stat!= null){
+            Destroy(stat);
+            stat = null;
+        }
+        stat = new ClassicStat();
     }
     public GameObject text_module;
     Sequence score_seq;
     public override void update_score(int sc){
-        //Debug.Log(11);
-        score += Mathf.RoundToInt(sc*level);
-        score_seq.Append(DOTween.To(() => display_score, x => display_score = x, score, 0.5f).SetEase(Ease.InOutQuad));
-        //score_seq.Append(DOTween.To(() => display_score, x => display_score = x, score, 0.3f).SetEase(Ease.InOutQuad));
-    }
-    void Awake(){
+        //Debug.Log(this.multiplier);
+        score += Mathf.RoundToInt(sc*multiplier);
         
+        //DOTween.To(() => valFloat, x => valFloat = x, 0f, 1f);
+        //DOVirtual.Int()
+        //display_score = score;
+        //Debug.Log(display_score);
+        DOTween.To(() => display_score, x => display_score = x, score, 0.3f).SetEase(Ease.InOutQuad);
+        
+        DOTween.To(() => GameObject.Find("progress_bar").GetComponent<Slider>().value, x => GameObject.Find("progress_bar").GetComponent<Slider>().value = x, score, 0.3f).SetEase(Ease.InOutQuad);
+
     }
-    IEnumerator no_more_moves(){
+
+    public IEnumerator no_more_moves(){
+        stat.level = level;
+        stat.score = score;
+
         StartCoroutine(MusicManager.instance.fading("classic_music",0.6f));
         yield return new WaitForSeconds(0.6f);
         MusicManager.instance.Play("gameover");
         GameObject t = Instantiate(text_module,Vector3.zero, Quaternion.identity);
         t.transform.SetParent(GameObject.Find("Canvas").transform);
         t.GetComponent<RectTransform>().localScale = Vector3.one;
-        StartCoroutine(t.GetComponent<bigtext>().texting2("NO MORE MOVES"));
+        StartCoroutine(t.GetComponent<bigtext>().texting2("NO MORE \nMOVES"));
         yield return new WaitForSeconds(4f);
         StartCoroutine(SceneLoader.instance.transition("Scenes/Gameover",Vector2.zero));
         //SceneManager.LoadScene("Scenes/Gameover",LoadSceneMode.Single);
@@ -55,9 +78,10 @@ public class ClassicHandler : Handler
         holding = new List<GameObject>();
         bd = GameObject.Find("board").GetComponent<board>();
         level = 1;
+        
         MusicManager.instance.Play("classic_music");
         background = Instantiate(bgavail[level % bgavail.Count],Vector3.zero,Quaternion.identity);
-
+        StartCoroutine(bd.fill_up());
         level_standby();
         GameObject t = Instantiate(text_module,Vector3.zero, Quaternion.identity);
         t.transform.SetParent(GameObject.Find("Canvas").transform);
@@ -66,7 +90,9 @@ public class ClassicHandler : Handler
     }
 
     void level_standby(){
-        GameObject.Find("progress_bar").GetComponent<Slider>().maxValue = milestone(level);
+        
+        //Debug.Log(multiplier);
+        GameObject.Find("progress_bar").GetComponent<Slider>().maxValue = score + milestone(level);
         GameObject.Find("progress_bar").GetComponent<Slider>().minValue = score;
         difficulty = Mathf.RoundToInt(100 * (1 - Mathf.Pow(0.55f,level)));
         //difficulty = Mathf.CeilToInt(100 * (1 - Mathf.Exp(-0.5f * level)));
@@ -85,7 +111,7 @@ public class ClassicHandler : Handler
         GameObject t = Instantiate(text_module,Vector3.zero, Quaternion.identity);
         t.transform.SetParent(GameObject.Find("Canvas").transform);
         t.GetComponent<RectTransform>().localScale = Vector3.one;
-        StartCoroutine(t.GetComponent<bigtext>().texting3("LEVEL COMPLETE"));
+        StartCoroutine(t.GetComponent<bigtext>().texting3("LEVEL\nCOMPLETE"));
 
 
         yield return new WaitForSeconds(1.0f);
@@ -98,23 +124,19 @@ public class ClassicHandler : Handler
         maskobjout(background_old);
         maskobjin(background);
         background.transform.SetAsLastSibling();
-        StartCoroutine(holing(Vector2Int.zero));
+        //StartCoroutine(holing(Vector2Int.zero));
         
         yield return new WaitForSeconds(2.5f);
         maskobjreset(background);
         Destroy(background_old);
         
-        yield return new WaitForSeconds(2.0f);
+        //yield return new WaitForSeconds(2.0f);
         
-        AudioManager.instance.Play("trans_preig");
-        level_standby();
-        yield return new WaitForSeconds(2.0f);
-        StartCoroutine(MusicManager.instance.fadin("classic_music",0.6f));
         
-        t = Instantiate(text_module,Vector3.zero, Quaternion.identity);
-        t.transform.SetParent(GameObject.Find("Canvas").transform);
-        t.GetComponent<RectTransform>().localScale = Vector3.one;
-        StartCoroutine(t.GetComponent<bigtext>().texting("LEVEL " + level.ToString()));
+        
+        
+        
+        
 
     }
         IEnumerator ui_transition(){
@@ -124,38 +146,71 @@ public class ClassicHandler : Handler
         Vector3 original_pb_pos = GameObject.Find("progress_bar").GetComponent<RectTransform>().position;
         Vector3 original_hex_scale = bd.hexagons[0,0].transform.localScale;
         Vector3 original_panel_scale = GameObject.Find("panel").GetComponent<RectTransform>().localScale;
+        Vector3 original_slot_scale = bd.hexagon_slots[0,0].transform.localScale;
+        
         GameObject.Find("scorepod").transform.DOScale(Vector3.zero,0.4f).SetEase(Ease.InQuad);
         GameObject.Find("progress_bar").GetComponent<RectTransform>().DOMove(original_pb_pos+20f*Vector3.down,0.7f).SetEase(Ease.InQuad);
         GameObject.Find("panel").GetComponent<RectTransform>().DOScale(Vector3.zero,0.5f);
-        bd.transform.DOMoveX(-3.97f,0.7f).SetEase(Ease.InOutQuad);
+
+
+        bd.transform.DOMoveX((bd.transform.position - bd.hexagon_slots[bd.boardWidth/2,bd.boardHeight/2].transform.localPosition).x,0.7f).SetEase(Ease.InOutQuad);
 
         yield return new WaitForSeconds(1.5f);
 
         StartCoroutine(MusicManager.instance.fading("classic_music",0.6f));
         AudioManager.instance.Play("lock_start");
-        StartCoroutine(hex_void(new Vector2Int(bd.boardWidth/2,bd.boardWidth/2),4.0f));
-
-        yield return new WaitForSeconds(0.5f);
+        StartCoroutine(hex_void(new Vector2Int(bd.boardWidth/2,bd.boardWidth/2),3.0f));
+        GameObject.Find("Main Camera").GetComponent<Camera>().DOOrthoSize(6.5f,0.7f).SetEase(Ease.OutQuad);
+        GameObject.Find("Main Camera").GetComponent<Camera>().DOOrthoSize(2f,0.3f).SetDelay(0.8f);
+        GameObject.Find("Main Camera").GetComponent<Camera>().DOOrthoSize(5f,0.1f).SetDelay(1.05f).SetEase(Ease.OutQuad);
+        yield return new WaitForSeconds(0.8f);
+        StartCoroutine(holing(Vector2Int.zero));
+        AudioManager.instance.Play("explode");
         AudioManager.instance.Play("trans_ig");
         AudioManager.instance.Play("trans_loop");
+        
         //GameObject.Find("scorepod").transform.DOScale(Vector3.zero,0.4f).SetEase(Ease.InQuad);
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitUntil(()=> bd.num_of_hex()<1);
         StartCoroutine(bd.fill_up());
         
         for (int i = 0;i<bd.boardWidth;i++){
             for (int j = 0; j<bd.boardHeight;j++){
                 bd.hexagons[i,j].transform.localScale = Vector3.zero;
+                //bd.hexagon_slots[i,j].transform.localScale = Vector3.one*10f;
+                
             }
         }
-        yield return new WaitForSeconds(2.5f);
+
+        yield return new WaitForSeconds(1.75f);
+        for (int i = 0;i<bd.boardWidth;i++){
+            for (int j = 0; j<bd.boardHeight;j++){
+                bd.hexagon_slots[i,j].transform.DOScale(original_slot_scale,1f).SetEase(Ease.InOutQuad).From(Vector3.one*10f);
+                
+            }
+        }
         AudioManager.instance.Play("trans_arrival");
-        AudioManager.instance.Stop("trans_loop");
-        StartCoroutine(hex_up(new Vector2Int(bd.boardWidth/2,bd.boardWidth/2),original_hex_scale));
+        
+
+
         yield return new WaitForSeconds(1f);
+        AudioManager.instance.Play("trans_preig");
+        AudioManager.instance.Stop("trans_loop");
+
+        StartCoroutine(hex_up(new Vector2Int(bd.boardWidth/2,bd.boardWidth/2),original_hex_scale));
+        yield return new WaitUntil(()=> (h_pos.Count == 0));
+
+
         GameObject.Find("scorepod").transform.DOScale(original_sp_scale,0.4f).SetEase(Ease.OutQuad);
         GameObject.Find("progress_bar").GetComponent<RectTransform>().DOMove(original_pb_pos,0.7f).SetEase(Ease.OutQuad);
         GameObject.Find("panel").GetComponent<RectTransform>().DOScale(original_panel_scale,0.5f);
         bd.transform.DOMoveX(bdt.x,0.7f).SetEase(Ease.InOutQuad);
+        level_standby();
+        StartCoroutine(MusicManager.instance.fadin("classic_music",0.6f));
+        
+        GameObject t = Instantiate(text_module,Vector3.zero, Quaternion.identity);
+        t.transform.SetParent(GameObject.Find("Canvas").transform);
+        t.GetComponent<RectTransform>().localScale = Vector3.one;
+        StartCoroutine(t.GetComponent<bigtext>().texting("LEVEL " + level.ToString()));
 
     }
     List<Vector2Int> hole_pos = new List<Vector2Int>();
@@ -164,29 +219,39 @@ public class ClassicHandler : Handler
         return (((grid_to_pix(pos2.x, pos2.y)-grid_to_pix(pos1.x,pos1.y)).magnitude)<=1*1.1f);
 
     }
-    Vector2 grid_to_pix(int i, int j){
-        float xOffset = 0.8743f;
-        float yOffset = 0.4722f;
+    Vector2 grid_to_pix(int i, int j, float scale = 1f){
+        float xOffset = 0.8743f * scale;
+        float yOffset = 0.4722f * scale;
         float x = i * xOffset;
-        float y = j * 0.9425f + (i % 2) * yOffset;
+        float y = j * 0.9425f * scale + (i % 2) * yOffset;
         return transform.position + new Vector3(x,y);
     }
     List<Vector2Int> h_pos = new List<Vector2Int>();
     IEnumerator hex_void(Vector2Int pos, float power){
         if ((!h_pos.Contains(pos))&&(pos.magnitude<=15)&&bd.is_legit(pos)){
             //Debug.Log("cc");
+            
             h_pos.Add(pos);
             StartCoroutine(bd.hexagons[pos.x,pos.y].GetComponent<Hexa>().jump_in_void(power));
-            bd.hexagon_slots[pos.x,pos.y].transform.DOMove(Vector3.zero,0.5f).SetEase(Ease.InOutQuad).SetDelay(0.6f);
-            yield return new WaitForSeconds(0.15f);
+            
+            bd.hexagon_slots[pos.x,pos.y].transform.DOMove(Vector3.zero,0.4f).SetEase(Ease.InOutQuad).SetDelay(0.65f);
+            yield return new WaitForSeconds(0.2f);
             for (int i = -1; i<=1;i++){
                 for (int j = -1; j<=1;j++){
                     if (is_next_to(pos, pos + new Vector2Int(i,j))){
-                        StartCoroutine(hex_void(pos + new Vector2Int(i,j),power-0.5f));
+                        StartCoroutine(hex_void(pos + new Vector2Int(i,j),power-0.05f));
                     }
                 }
             }
-            yield return new WaitForSeconds(3.0f);
+            yield return new WaitForSeconds(0.5f);
+            bd.hexagon_slots[pos.x,pos.y].transform.DOScale(Vector3.zero,0.2f).SetEase(Ease.InOutQuad).SetDelay(0.1f);
+            if (pos == Vector2Int.zero){
+                StartCoroutine(holing(Vector2Int.zero));
+                //GameObject.Find("warp1").GetComponent<ParticleSystem>().Play();
+                //GameObject.Find("warp2").GetComponent<ParticleSystem>().Play();
+                //GameObject.Find("warp3").GetComponent<ParticleSystem>().Play();
+            }
+
             h_pos.Remove(pos);
         }
     }
@@ -195,7 +260,7 @@ public class ClassicHandler : Handler
         if ((!h_pos.Contains(pos))&&(pos.magnitude<=15)&&bd.is_legit(pos)){
             //Debug.Log("cc");
             h_pos.Add(pos);
-            bd.hexagons[pos.x,pos.y].transform.DOScale(scaling,0.5f).SetEase(Ease.InOutCubic).SetDelay(0.3f);
+            bd.hexagons[pos.x,pos.y].transform.DOScale(scaling,0.5f).SetEase(Ease.InOutCubic).SetDelay(0.5f);
             bd.hexagon_slots[pos.x,pos.y].transform.DOLocalMove(bd.hexagons[pos.x,pos.y].transform.localPosition,0.5f).SetEase(Ease.InOutQuad);
             yield return new WaitForSeconds(0.33f);
             for (int i = -1; i<=1;i++){
@@ -205,7 +270,7 @@ public class ClassicHandler : Handler
                     }
                 }
             }
-            yield return new WaitForSeconds(3.0f);
+            yield return new WaitForSeconds(0.5f);
             h_pos.Remove(pos);
         }
     }
@@ -218,12 +283,12 @@ public class ClassicHandler : Handler
 
     IEnumerator holing(Vector2Int pos){
         GameObject effect;
-        if ((!hole_pos.Contains(pos))&&(pos.magnitude<=15)){
-            effect = Instantiate(hex_mask,grid_to_pix(pos.x,pos.y),Quaternion.identity);
+        if ((!hole_pos.Contains(pos))&&(pos.magnitude<=10)){
+            effect = Instantiate(hex_mask,grid_to_pix(pos.x,pos.y,1.25f),Quaternion.identity);
             hole_pos.Add(pos);
             effect.transform.localScale = Vector3.zero;
-            effect.transform.DOScale(Vector3.one*0.5f,0.5f);
-            yield return new WaitForSeconds(0.2f);
+            effect.transform.DOScale(Vector3.one*0.5f*1.25f,0.5f).SetEase(Ease.InOutQuad);
+            yield return new WaitForSeconds(0.11f);
             for (int i = -1; i<=1;i++){
                 for (int j = -1; j<=1;j++){
                     if (is_next_to(pos, pos + new Vector2Int(i,j))){
@@ -231,17 +296,21 @@ public class ClassicHandler : Handler
                     }
                 }
             }
-            yield return new WaitForSeconds(2.5f);
-            effect.GetComponentInChildren<SpriteRenderer>().DOFade(0.0f,0.3f);
-            yield return new WaitForSeconds(1.5f);
+            //yield return new WaitForSeconds(2.5f);
+            foreach (var k in effect.GetComponentsInChildren<SpriteRenderer>()){
+                k.DOFade(0.0f,0.3f).SetEase(Ease.InOutQuad).SetEase(Ease.InOutQuad).SetDelay(2f);
+            }
+            //effect.transform.DOScale(Vector3.zero,0.3f).SetDelay(2.5f);
+            //effect.transform.DOMove(Vector3.zero,0.3f).SetDelay(2.5f);
+            
+            
+            yield return new WaitForSeconds(4.5f);
             hole_pos.Remove(pos);
             Destroy(effect);
 
         }
-            
-        
-
     }
+
     
 
 
@@ -274,15 +343,35 @@ public class ClassicHandler : Handler
             i.maskInteraction = SpriteMaskInteraction.None;
         }
     }
+    public override void update_hex(int nor, int bomb, int laser, int void_hex){
+        stat.num_of_bomb+=bomb;
+        stat.num_of_laser+=laser;
+        stat.num_of_void += void_hex;
+        stat.num_of_hex+=nor + bomb + laser + void_hex;
+    }
     IEnumerator level_process(){
-        yield return new WaitUntil(() => (bd.idle&&score>=GameObject.Find("progress_bar").GetComponent<Slider>().maxValue));
-        bd.idle = false;
-        bd.drag_list.Clear();
-        yield return new WaitUntil(() => (score==display_score));
+        while (true){
+            yield return new WaitUntil(() => (!bd.idle));
+            yield return new WaitUntil(() => (bd.idle));
+            if (score>=GameObject.Find("progress_bar").GetComponent<Slider>().maxValue){
+                bd.idle = false;
+                bd.drag_list.Clear();
+                yield return new WaitUntil(() => (score==display_score));
 
-        AudioManager.instance.Play("multiup");
-        StartCoroutine(level_up());
-        //StartCoroutine(level_process());
+                AudioManager.instance.Play("multiup");
+                StartCoroutine(level_up());
+                //StartCoroutine(level_process());
+                break;
+            }
+            else if (bd.get_hint()==null){
+                bd.idle = false;
+                yield return new WaitForSeconds(0.6f);
+                StartCoroutine(no_more_moves());
+                break;
+            }
+        }
+        //yield return new WaitUntil(() => (bd.idle&&score>=GameObject.Find("progress_bar").GetComponent<Slider>().maxValue));
+        
     }
     public void hint()
     {
@@ -304,25 +393,41 @@ public class ClassicHandler : Handler
         }
         
     }
-    void mainmenu(){
-        SceneManager.LoadScene("Scenes/Menu",LoadSceneMode.Single);
+    public void mainmenu(){
+        if (bd.idle == true){
+            SceneManager.LoadScene("Scenes/PauseMenu",LoadSceneMode.Additive);
+            StartCoroutine(pausing());
+        }
+        
     }
     // Update is called once per frame
+    public IEnumerator pausing(){
+        Debug.Log("op1");
+        GameObject canvas = GameObject.Find("Canvas");
+        PauseMenu.previous_scene = "Scenes/Classic";
+        GameObject bdg = bd.gameObject;
+        canvas.SetActive(false);
+        bdg.SetActive(false);
+        //MusicManager.instance.Pause("classic_music");
+        //MusicManager.instance.Play("gameover");
+        yield return new WaitUntil(()=>(!SceneManager.GetSceneByName("PauseMenu").IsValid()));
+        Debug.Log("op2");
+        //MusicManager.instance.Continue("classic_music");
+        //MusicManager.instance.Stop("gameover");
+        canvas.SetActive(true);
+        bdg.SetActive(true);
+
+    }
     void Update()
     {
+        multiplier = Handler.level;
         if (Input.GetKeyDown(KeyCode.Escape)){
             mainmenu();
         }
 
-        if (display_score < score){
-            display_score += Mathf.RoundToInt(10.0f);
-        }
-        
-        else
-            display_score = score;
         GameObject.Find("scorepod").transform.Find("score_text").gameObject.GetComponent<TextMeshPro>().text = display_score.ToString("N0");
         GameObject.Find("scorepod").transform.Find("level_text").gameObject.GetComponent<TextMeshPro>().text = level.ToString();
-        GameObject.Find("progress_bar").GetComponent<Slider>().value = display_score;
-        GameObject.Find("hint").GetComponent<Slider>().value+=Time.deltaTime*0.1f;
+        if (GameObject.Find("hint")!=null)
+            GameObject.Find("hint").GetComponent<Slider>().value+=Time.deltaTime*0.1f;
     }
 }

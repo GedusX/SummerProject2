@@ -28,6 +28,17 @@ public class AudioManager : MonoBehaviour {
 			s.source.pitch = s.pitch;
 			s.source.loop = s.loop;
 		}
+		DontDestroyOnLoad(this);
+	}
+	public void VolumeChange(){
+		foreach (Sound s in sounds)
+		{
+			//s.source = gameObject.AddComponent<AudioSource>();
+			//s.source.clip = s.clip;
+			s.source.volume = s.volume * GlobalConfig.audio_volume;
+			//s.source.pitch = s.pitch;
+			//s.source.loop = s.loop;
+		}
 	}
 
 	public void Play(string sound)

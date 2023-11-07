@@ -48,8 +48,8 @@ public class SceneLoader : MonoBehaviour
             effect.transform.SetParent(gameObject.transform);
             hole_pos.Add(pos);
             effect.transform.localScale = Vector3.zero;
-            effect.transform.DOScale(Vector3.one*0.5f,0.15f).SetEase(Ease.OutQuad);
-            yield return new WaitForSeconds(0.1f);
+            effect.transform.DOScale(Vector3.one*0.5f,0.2f).SetEase(Ease.OutQuad);
+            yield return new WaitForSeconds(0.07f);
             for (int i = -1; i<=1;i++){
                 for (int j = -1; j<=1;j++){
                     if (is_next_to(pos, pos + new Vector2Int(i,j))){
@@ -57,12 +57,14 @@ public class SceneLoader : MonoBehaviour
                     }
                 }
             }
-            yield return new WaitForSeconds(1.5f);
+            yield return new WaitForSeconds(0.75f);
+            hole_pos.Remove(pos);
             yield return new WaitUntil(() => asyncLoadLevel.isDone);
             foreach (var k in effect.GetComponentsInChildren<SpriteRenderer>())
                 k.DOFade(0.0f,0.3f);
+            //effect.transform.DOScale(Vector3.zero*0.5f,0.15f).SetEase(Ease.OutQuad);
             yield return new WaitForSeconds(0.3f);
-            hole_pos.Remove(pos);
+            
             Destroy(effect);
 
         }
@@ -71,11 +73,14 @@ public class SceneLoader : MonoBehaviour
 
     }
     private AsyncOperation asyncLoadLevel;
+    
     public IEnumerator transition(string scene, Vector2 pos){
         pos_wanting = pos;
+        
         StartCoroutine(holing(Vector2Int.zero));
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(0.7f);
         asyncLoadLevel = SceneManager.LoadSceneAsync(scene,LoadSceneMode.Single);
+
     }
     // Update is called once per frame
     void Update()
